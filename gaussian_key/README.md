@@ -20,3 +20,9 @@ To run similar tests as the paper, you could use
 # key
 ./exectuable 32 65536 15 1 1
 ```
+
+Each test tests both the independent case and dependent case, i.e. the former is 32 independent polynomial multiplied together, while the latter is one polynomial multiplied 32 times.
+
+## Plot and Analyse
+
+See `plot.py`, which uses `data/` and generates image in `figure/`.

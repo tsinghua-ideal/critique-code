@@ -1,0 +1,48 @@
+Depth: 32, RingDim: 65536, MulDepth: 10, NumTests: 1000, isKey: 1
+logQ : 420
+Element Parameters: ILDCRTParams [m=131072 n=65536 q=2707685247990011875254998408103334339408092993774480271889031669391120274909211061219037890601258345578608854666040327621574657 ru=0 bigq=0 bigru=0]
+  m_params:
+    0: ILParams [m=131072 n=65536 q=1152921504606584833 ru=18043022392882 bigq=0 bigru=0]
+    1: ILParams [m=131072 n=65536 q=1152921504598720513 ru=800790938143 bigq=0 bigru=0]
+    2: ILParams [m=131072 n=65536 q=1152921504597016577 ru=17749908910371 bigq=0 bigru=0]
+    3: ILParams [m=131072 n=65536 q=1152921504595968001 ru=11469071954203 bigq=0 bigru=0]
+    4: ILParams [m=131072 n=65536 q=1152921504592822273 ru=21482204621753 bigq=0 bigru=0]
+    5: ILParams [m=131072 n=65536 q=1152921504592429057 ru=6744827058362 bigq=0 bigru=0]
+    6: ILParams [m=131072 n=65536 q=1152921504589938689 ru=17679085976867 bigq=0 bigru=0]
+
+
+Encoding Parameters: [p=65537 rootP =0 bigP =0 rootBigP =0 g=0 L=65536]
+
+Independent expression norms: 
+Median: 0, Max: 0
+Median: 9.55459, Max: 9.96434
+Median: 17.2683, Max: 17.6158
+Median: 24.9683, Max: 25.2956
+Median: 32.6718, Max: 33.0126
+Median: 40.3773, Max: 40.7201
+Median: 48.0842, Max: 48.4744
+Median: 55.7842, Max: 56.3277
+Median: 63.4832, Max: 63.9604
+Median: 71.1814, Max: 71.6798
+Median: 78.8759, Max: 79.3655
+Median: 86.5655, Max: 87.1863
+Median: 94.2444, Max: 94.9036
+Median: 101.919, Max: 102.809
+Median: 109.59, Max: 110.761
+Median: 117.257, Max: 118.441
+Median: 124.918, Max: 126.14
+Median: 132.558, Max: 133.904
+Median: 140.212, Max: 141.543
+Median: 147.86, Max: 149.67
+Median: 155.496, Max: 157.16
+Median: 163.134, Max: 164.758
+Median: 170.762, Max: 172.679
+Median: 178.39, Max: 180.483
+Median: 186.001, Max: 188.246
+Median: 193.617, Max: 196.024
+Median: 201.238, Max: 204.216
+Median: 208.86, Max: 212.315
+Median: 216.448, Max: 220.139
+Median: 224.073, Max: 227.779
+Median: 231.642, Max: 235.379
+Median: 239.207, Max: 243.329
