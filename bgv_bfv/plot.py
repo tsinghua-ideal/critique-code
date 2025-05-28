@@ -81,6 +81,7 @@ log_arrays[1] = read_log_for_test("1")
 log_arrays[100] = read_log_for_test("100")
 log_arrays[1000] = read_log_for_test("1000")
 log_arrays[10000] = read_log_for_test("10000")
+log_arrays[60000] = read_log_for_test("60000")
 
 L = 32
 
@@ -117,6 +118,7 @@ count_to_name = {
     100: "100 Tests",
     1000: "1k Tests",
     10000: "10k Tests",
+    60000: "60k Tests",
     100000: "100k Tests",
     300000: "300k Tests"
 }
@@ -129,7 +131,7 @@ def plot_bound():
         plt.clf()
         plt.plot(x, zero, 'k--', label="StdErr")
         plt.plot(x, diff_normal, ':', label="Gaussian Bound")
-        for test in [1, 100, 1000, 10000]:
+        for test in [1, 100, 1000, 10000, 60000]:
             line = log_arrays[test][log]
             bound_diff = [line[i] - base[i] for i in range(L)]
             plt.plot(x, bound_diff, '-', label=f"Max Noise ({count_to_name[test]})")
