@@ -51,6 +51,43 @@ def get_log2std0():
 
 log2std0 = get_log2std0()
 
+def kpz21_bfv():
+    deltaN = 2 * sqrt(N)
+    Berr = 6 * gaussian_std0
+    Bkey = 1
+    Vnorm = (1. + 2. * deltaN * Bkey) * Berr
+
+    bound = [Vnorm]
+
+    for k in range(2, L + 1):
+        # Formula 10 of KPZ21
+        b = (4 + deltaN) * (bound[k-1-1] + Vnorm) * deltaN * t/ 2 + (1 + deltaN * Bkey + (deltaN*Bkey)**2)/2
+        bound.append(b)
+
+    logBound = [log2(b) for b in bound]
+
+    return logBound
+
+def openfhe_bfv():
+    deltaN = 2 * sqrt(N)
+    C1 = deltaN * deltaN * t
+    Berr = 6 * gaussian_std0
+    Bkey = 1
+    Vnorm = (1. + 2. * deltaN * Bkey) * Berr
+
+    bound = [log2(Vnorm)]
+
+    for k in range(2, L + 1):
+        # After Formula 10 of KPZ21
+        # https://github.com/openfheorg/openfhe-development/blob/02a8e9c76c3e2eff53392530199c63e4da53eb65/src/pke/lib/scheme/bfvrns/bfvrns-parametergeneration.cpp#L260-L264
+        b = (k -1 - 1) * log2(C1) + log2(C1 * Vnorm)
+        bound.append(b)
+
+    return bound
+
+kpz21_bound = kpz21_bfv()
+openfhe_bound = openfhe_bfv()
+
 def read_log(filename):
     array = []
     with open(filename, "r") as f:
@@ -140,5 +177,26 @@ def plot_bound():
         plt.xlabel('\\#Mult')
         plt.ylabel('$\\log_2(v) - \\log_2(\\sigma)$')
         plt.savefig(f"figure/{log}.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
+
+        if "bfv" in log:
+            plt.clf()
+            plt.plot(x, zero, 'k--', label="StdErr")
+            plt.plot(x, diff_normal, ':', label="Gaussian Bound")
+
+            bound_diff_kpz21 = [kpz21_bound[i] - base[i] for i in range(L)]
+            bound_diff_openfhe = [openfhe_bound[i] - base[i] for i in range(L)]
+            plt.plot(x, bound_diff_kpz21, '--', label="KPZ21 Bound")
+            plt.plot(x, bound_diff_openfhe, '--', label="OpenFHE Bound")
+
+            test = 60000
+            line = log_arrays[test][log]
+            bound_diff = [line[i] - base[i] for i in range(L)]
+            plt.plot(x, bound_diff, '-', label=f"Max Noise ({count_to_name[test]})")
+
+
+            plt.legend()
+            plt.xlabel('\\#Mult')
+            plt.ylabel('$\\log_2(v) - \\log_2(\\sigma)$')
+            plt.savefig(f"figure/{log}_openfhe.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
 
 plot_bound()
