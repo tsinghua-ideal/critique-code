@@ -38,7 +38,7 @@ def get_bound(N, depth, std0=gaussian_std0):
     for i, var in enumerate(var_dep):
         normal_bound_dep.append(alpha_bound_from_variance(var, N))
 
-    bound_canonical = [log2(sqrt(N) * std0 * sqrt(2) * 6)]
+    bound_canonical = [log2(sqrt(N) * std0 * 6)]
     # BKey = 1
     bound_kpz21 = [log2(6 * std0) if std0 == gaussian_std0 else log2(1)]
     for i, var in enumerate(var_dep):
