@@ -85,8 +85,53 @@ def openfhe_bfv():
 
     return bound
 
+def bmcm23_bfv():
+    Verr = gaussian_std0 ** 2
+    Vkey = key_std0 ** 2
+
+    variance = [log2((2 * N * Vkey + 1) * Verr)]
+    for k in range(2, L + 1):
+        correction_factor = k
+        v = log2(correction_factor) + variance[k - 1 - 1] + log2(N * Vkey + 1) + log2(1/12 * N * t * t)
+        variance.append(v)
+    
+    bound = []
+    for v in variance:
+        # 6 sigma
+        bound.append(log2(6) + 1/2 * v)
+    
+    return bound
+
+def correction_factor_bmcm23(k):
+    # N = 2 ** 15
+    alpha = 2.9765
+    beta = 0.0197
+    gamma = 0.0043
+    delta = 20.7760
+
+    return delta - exp(alpha - beta * k - gamma * k * k)
+
+def bmcm23_bfv2():
+    Verr = gaussian_std0 ** 2
+    Vkey = key_std0 ** 2
+
+    variance = [log2((2 * N * Vkey + 1) * Verr)]
+    for k in range(2, L + 1):
+        correction_factor = correction_factor_bmcm23(k)
+        v = log2(correction_factor) + variance[k - 1 - 1] + log2(N * Vkey + 1) + log2(1/12 * N * t * t)
+        variance.append(v)
+    
+    bound = []
+    for v in variance:
+        # 6 sigma
+        bound.append(log2(6) + 1/2 * v)
+    
+    return bound
+
 kpz21_bound = kpz21_bfv()
 openfhe_bound = openfhe_bfv()
+bmcm23_bound = bmcm23_bfv()
+bmcm23_bound2 = bmcm23_bfv2()
 
 def read_log(filename):
     array = []
@@ -198,5 +243,26 @@ def plot_bound():
             plt.xlabel('\\#Mult')
             plt.ylabel('$\\log_2(v) - \\log_2(\\sigma)$')
             plt.savefig(f"figure/{log}_openfhe.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
+        
+        if "bfv" in log and "indep" in log:
+            plt.clf()
+            plt.plot(x, zero, 'k--', label="StdErr")
+            plt.plot(x, diff_normal, ':', label="Gaussian Bound")
+
+            bound_diff_bmcm23 = [bmcm23_bound[i] - base[i] for i in range(L)]
+            bound_diff_bmcm23_2 = [bmcm23_bound2[i] - base[i] for i in range(L)]
+            plt.plot(x, bound_diff_bmcm23, '--', label="BMCM23 Bound")
+            plt.plot(x, bound_diff_bmcm23_2, '--', label="BMCM23 H1 Bound")
+
+            test = 60000
+            line = log_arrays[test][log]
+            bound_diff = [line[i] - base[i] for i in range(L)]
+            plt.plot(x, bound_diff, '-', label=f"Max Noise ({count_to_name[test]})")
+
+
+            plt.legend()
+            plt.xlabel('\\#Mult')
+            plt.ylabel('$\\log_2(v) - \\log_2(\\sigma)$')
+            plt.savefig(f"figure/{log}_bmcm23.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
 
 plot_bound()
