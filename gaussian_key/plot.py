@@ -68,11 +68,11 @@ def read_log(filename):
 
 data = {}
 
-for poly in ["gaussian", "key"]:
-    for noise in ["indep", "dep"]:
-        for count in [100, 1000, 10000, 100000, 300000]:
+for poly in ["key"]:
+    for noise in ["dep"]:
+        for count in [100, 1000, 10000]:
             isKey = 1 if poly == "key" else 0
-            filename = f"data/gaussian_32_65536_10_{count}_{isKey}_{noise}.txt"
+            filename = f"data/key_dep_32_65536_10_{count}_{isKey}_{noise}.txt"
             data[f"{poly}_{count}_{noise}"] = read_log(filename)
 
 bounds_gaussian = get_bound(65536, L, gaussian_std0)
@@ -114,9 +114,9 @@ count_to_name = {
 }
 
 def plot_bound():
-    for poly in ["gaussian", "key"]:
+    for poly in ["key"]:
         bound = bounds_gaussian if poly == "gaussian" else bounds_key
-        for noise in ["indep", "dep"]:
+        for noise in ["dep"]:
             base = bound[f"stderr_{noise}"]
             bound_normal = bound[f"normal_bound_{noise}"]
             diff_normal = [bound_normal[i] - base[i] for i in range(L)]
@@ -125,7 +125,7 @@ def plot_bound():
             plt.clf()
             plt.plot(x, zero, 'k--', label="StdErr")
             plt.plot(x, diff_normal, ':', label="Gaussian Bound")
-            for count in [100, 1000, 10000, 100000, 300000]:
+            for count in [100, 1000, 10000]:
                 line_real = data[f"{poly}_{count}_{noise}"]
                 diff = [line_real[i] - base[i] for i in range(L)]
                 plt.plot(x, diff, "-", label=f"Max Noise ({count_to_name[count]})")
@@ -134,7 +134,7 @@ def plot_bound():
             # plt.ylim(-4, 8.5)
             plt.xlabel('\\#Mult')
             plt.ylabel('$\\log_2(v) - \\log_2(\\sigma)$')
-            plt.savefig(f"figure/{poly}_{noise}_1.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
+            plt.savefig(f"figure/key_dep_{poly}_{noise}_1.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
             
             # plot canonical and kpz21
             plt.clf()
@@ -146,7 +146,8 @@ def plot_bound():
             plt.plot(x, diff_normal, ':', label="Gaussian Bound")
             plt.plot(x, bound_diff_kpz21, '-.', label="HPS19 Bound")
             plt.plot(x, bound_diff_canonical, '-.', label="Canonical Bound")
-            for count in [300000]:
+            #for count in [300000]:
+            for count in [10000]:
                 line_real = data[f"{poly}_{count}_{noise}"]
                 bound_diff_real = [line_real[i] - base[i] for i in range(L)]
                 plt.plot(x, bound_diff_real, '-', label=f"Max Noise ({count_to_name[count]})")
@@ -154,6 +155,6 @@ def plot_bound():
             plt.legend()
             plt.xlabel('\\#Mult')
             plt.ylabel('$\\log_2(v) - \\log_2(\\sigma)$')
-            plt.savefig(f"figure/{poly}_{noise}_2.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
+            plt.savefig(f"figure/key_dep_{poly}_{noise}_2.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
 
 plot_bound()

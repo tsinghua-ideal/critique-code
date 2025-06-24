@@ -1,0 +1,49 @@
+Depth: 32, RingDim: 65536, MulDepth: 10, NumTests: 1000, isKey: 1
+logQ : 420
+Element Parameters: ILDCRTParams [m=131072 n=65536 q=2707685247990011875254998408103334339408092993774480271889031669391120274909211061219037890601258345578608854666040327621574657 ru=0 bigq=0 bigru=0]
+  m_params:
+    0: ILParams [m=131072 n=65536 q=1152921504606584833 ru=18043022392882 bigq=0 bigru=0]
+    1: ILParams [m=131072 n=65536 q=1152921504598720513 ru=800790938143 bigq=0 bigru=0]
+    2: ILParams [m=131072 n=65536 q=1152921504597016577 ru=17749908910371 bigq=0 bigru=0]
+    3: ILParams [m=131072 n=65536 q=1152921504595968001 ru=11469071954203 bigq=0 bigru=0]
+    4: ILParams [m=131072 n=65536 q=1152921504592822273 ru=21482204621753 bigq=0 bigru=0]
+    5: ILParams [m=131072 n=65536 q=1152921504592429057 ru=6744827058362 bigq=0 bigru=0]
+    6: ILParams [m=131072 n=65536 q=1152921504589938689 ru=17679085976867 bigq=0 bigru=0]
+
+
+Encoding Parameters: [p=65537 rootP =0 bigP =0 rootBigP =0 g=0 L=65536]
+Distrib parm 3.19, Assurance measure 36, Noise scale 1, Digit Size 0, SecretKeyDist UNIFORM_TERNARY, Standard security level HEStd_NotSet
+
+Dependent expression norms: 
+Median: 0, Max: 0
+Median: 10.0553, Max: 10.42
+Median: 18.5508, Max: 18.9046
+Median: 27.257, Max: 27.6217
+Median: 36.1183, Max: 36.5309
+Median: 45.1032, Max: 45.5336
+Median: 54.1617, Max: 54.8433
+Median: 63.3046, Max: 64.261
+Median: 72.4835, Max: 73.7176
+Median: 81.69, Max: 83.2555
+Median: 90.944, Max: 92.8217
+Median: 100.214, Max: 102.452
+Median: 109.493, Max: 112.091
+Median: 118.799, Max: 121.778
+Median: 128.12, Max: 131.499
+Median: 137.436, Max: 141.214
+Median: 146.765, Max: 150.937
+Median: 156.094, Max: 160.66
+Median: 165.455, Max: 170.398
+Median: 174.799, Max: 180.136
+Median: 184.16, Max: 189.88
+Median: 193.535, Max: 199.622
+Median: 202.893, Max: 209.371
+Median: 212.264, Max: 219.116
+Median: 221.621, Max: 228.866
+Median: 230.994, Max: 238.615
+Median: 240.366, Max: 248.365
+Median: 249.741, Max: 258.116
+Median: 259.136, Max: 267.867
+Median: 268.526, Max: 277.618
+Median: 277.901, Max: 287.371
+Median: 287.299, Max: 297.123
