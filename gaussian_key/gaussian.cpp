@@ -10,15 +10,15 @@ using namespace lbcrypto;
 
 int gaussian_mult(unsigned depth, int ringDim, int mulDepth, int numTests, int isKey) {
     // open file gaussian_depth_ringdim_muldepth_numtests.txt
-    std::ofstream out_indep("gaussian_" + std::to_string(depth) + "_" + std::to_string(ringDim) + "_" +
-                            std::to_string(mulDepth) + "_" + std::to_string(numTests) + "_" + std::to_string(isKey) +
-                            "_indep.txt");
-    std::ofstream out_dep("gaussian_" + std::to_string(depth) + "_" + std::to_string(ringDim) + "_" +
+    //std::ofstream out_indep("key_dep_" + std::to_string(depth) + "_" + std::to_string(ringDim) + "_" +
+    //                        std::to_string(mulDepth) + "_" + std::to_string(numTests) + "_" + std::to_string(isKey) +
+    //                        "_indep.txt");
+    std::ofstream out_dep("key_dep_" + std::to_string(depth) + "_" + std::to_string(ringDim) + "_" +
                           std::to_string(mulDepth) + "_" + std::to_string(numTests) + "_" + std::to_string(isKey) +
                           "_dep.txt");
 
-    out_indep << "Depth: " << depth << ", RingDim: " << ringDim << ", MulDepth: " << mulDepth
-              << ", NumTests: " << numTests << ", isKey: " << isKey << std::endl;
+    //out_indep << "Depth: " << depth << ", RingDim: " << ringDim << ", MulDepth: " << mulDepth
+    //          << ", NumTests: " << numTests << ", isKey: " << isKey << std::endl;
     out_dep << "Depth: " << depth << ", RingDim: " << ringDim << ", MulDepth: " << mulDepth
             << ", NumTests: " << numTests << ", isKey: " << isKey << std::endl;
 
@@ -49,9 +49,9 @@ int gaussian_mult(unsigned depth, int ringDim, int mulDepth, int numTests, int i
         logqi_v.push_back(logqi);
         logQ += logqi;
     }
-    out_indep << "logQ : " << logQ << std::endl;
+    //out_indep << "logQ : " << logQ << std::endl;
     out_dep << "logQ : " << logQ << std::endl;
-    out_indep << *(cryptoContext->GetCryptoParameters()) << std::endl;
+    //out_indep << *(cryptoContext->GetCryptoParameters()) << std::endl;
     out_dep << *(cryptoContext->GetCryptoParameters()) << std::endl;
 
     // Get Discrete Gaussian
@@ -63,13 +63,13 @@ int gaussian_mult(unsigned depth, int ringDim, int mulDepth, int numTests, int i
         return log2(e.Norm());
     };
 
-    auto indepExpr = [&]() {
+    [[maybe_unused]] auto indepExpr = [&]() {
         std::vector<double> norms;
-        auto e =
-            isKey ? DCRTPoly(tug, elementParams, Format::EVALUATION) : DCRTPoly(dgg, elementParams, Format::EVALUATION);
+        auto e = isKey ? DCRTPoly(tug, elementParams, Format::EVALUATION, 2.0 * ringDim / 3) :
+                         DCRTPoly(dgg, elementParams, Format::EVALUATION);
         norms.push_back(getNorm(e));
         for (unsigned i = 0; i != depth - 1; ++i) {
-            auto newE = isKey ? DCRTPoly(tug, elementParams, Format::EVALUATION) :
+            auto newE = isKey ? DCRTPoly(tug, elementParams, Format::EVALUATION, 2.0 * ringDim / 3) :
                                 DCRTPoly(dgg, elementParams, Format::EVALUATION);
             e *= newE;
             norms.push_back(getNorm(e));
@@ -79,8 +79,29 @@ int gaussian_mult(unsigned depth, int ringDim, int mulDepth, int numTests, int i
 
     auto depExpr = [&]() {
         std::vector<double> norms;
-        auto e =
-            isKey ? DCRTPoly(tug, elementParams, Format::EVALUATION) : DCRTPoly(dgg, elementParams, Format::EVALUATION);
+        auto e = isKey ? DCRTPoly(tug, elementParams, Format::EVALUATION, 2.0 * ringDim / 3) :
+                         DCRTPoly(dgg, elementParams, Format::EVALUATION);
+        while (isKey) {
+            NativeInteger q = e.GetElementAtIndex(0).GetModulus();
+            NativeInteger sum(0);
+            e.SetFormat(Format::COEFFICIENT);
+            for (size_t i = 0; i < e.GetLength(); ++i) {
+                sum = sum.ModAddFastEq(e.GetElementAtIndex(0)[i], q);
+            }
+            const auto& half{q >> 1};
+            if (sum > half)
+                sum = q - sum;
+
+            //std::cerr << "sum over sk = " << sum << std::endl;
+            if (sum == 0) {
+                e.SetFormat(Format::EVALUATION);
+                break;
+            }
+            else {
+                // if sum is not zero, we need to generate a new sk
+                e = DCRTPoly(tug, elementParams, Format::EVALUATION, 2.0 * ringDim / 3);
+            }
+        }
         norms.push_back(getNorm(e));
         DCRTPoly oldE = e;
         for (unsigned i = 0; i != depth - 1; ++i) {
@@ -94,38 +115,38 @@ int gaussian_mult(unsigned depth, int ringDim, int mulDepth, int numTests, int i
     std::array<std::vector<double>, ARRAY_LEN> depNormsExprs;
 
     for (auto i = 0; i != numTests; ++i) {
-        auto indepNorms = indepExpr();
-        auto depNorms   = depExpr();
-        for (unsigned j = 0; j != indepNorms.size(); ++j) {
-            indepNormsExprs[j].push_back(indepNorms[j]);
+        //auto indepNorms = indepExpr();
+        auto depNorms = depExpr();
+        for (unsigned j = 0; j != depNorms.size(); ++j) {
+            //indepNormsExprs[j].push_back(indepNorms[j]);
             depNormsExprs[j].push_back(depNorms[j]);
         }
     }
 
-    std::array<double, ARRAY_LEN> indepMedians;
-    std::array<double, ARRAY_LEN> indepMaxs;
+    //std::array<double, ARRAY_LEN> indepMedians;
+    //std::array<double, ARRAY_LEN> indepMaxs;
     std::array<double, ARRAY_LEN> depMedians;
     std::array<double, ARRAY_LEN> depMaxs;
 
     // calculate the median and max
     for (unsigned i = 0; i != depth; ++i) {
-        std::sort(indepNormsExprs[i].begin(), indepNormsExprs[i].end());
+        //std::sort(indepNormsExprs[i].begin(), indepNormsExprs[i].end());
         std::sort(depNormsExprs[i].begin(), depNormsExprs[i].end());
-        auto indepMedian = indepNormsExprs[i][numTests / 2];
-        auto indepMax    = indepNormsExprs[i].back();
-        auto depMedian   = depNormsExprs[i][numTests / 2];
-        auto depMax      = depNormsExprs[i].back();
-        indepMedians[i]  = indepMedian;
-        indepMaxs[i]     = indepMax;
-        depMedians[i]    = depMedian;
-        depMaxs[i]       = depMax;
+        //auto indepMedian = indepNormsExprs[i][numTests / 2];
+        //auto indepMax    = indepNormsExprs[i].back();
+        auto depMedian = depNormsExprs[i][numTests / 2];
+        auto depMax    = depNormsExprs[i].back();
+        //indepMedians[i]  = indepMedian;
+        //indepMaxs[i]     = indepMax;
+        depMedians[i] = depMedian;
+        depMaxs[i]    = depMax;
     }
 
     // print the results
-    out_indep << "Independent expression norms: " << std::endl;
-    for (unsigned i = 0; i != depth; ++i) {
-        out_indep << "Median: " << indepMedians[i] << ", Max: " << indepMaxs[i] << std::endl;
-    }
+    //out_indep << "Independent expression norms: " << std::endl;
+    //for (unsigned i = 0; i != depth; ++i) {
+    //    out_indep << "Median: " << indepMedians[i] << ", Max: " << indepMaxs[i] << std::endl;
+    //}
     out_dep << "Dependent expression norms: " << std::endl;
     for (unsigned i = 0; i != depth; ++i) {
         out_dep << "Median: " << depMedians[i] << ", Max: " << depMaxs[i] << std::endl;
