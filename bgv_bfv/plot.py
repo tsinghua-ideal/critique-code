@@ -120,6 +120,21 @@ log_arrays[1000] = read_log_for_test("1000")
 log_arrays[10000] = read_log_for_test("10000")
 log_arrays[60000] = read_log_for_test("60000")
 
+def bin_log_to_filename(name, test):
+    return f"data/mult_seq_bin_{name}_logN15_{test}.log"
+
+def bin_read_log_for_test(test):
+    log_array = {}
+    for log in ["dep_32_bfv"]:
+        log_array[log] = read_log(bin_log_to_filename(log, test))
+    return log_array
+
+bin_log_arrays = {}
+
+bin_log_arrays[1] = bin_read_log_for_test("1")
+bin_log_arrays[100] = bin_read_log_for_test("100")
+bin_log_arrays[1000] = bin_read_log_for_test("1000")
+
 L = 32
 
 # plot the 64 cases for indep and dep
@@ -172,11 +187,17 @@ def plot_bound():
             line = log_arrays[test][log]
             bound_diff = [line[i] - base[i] for i in range(L)]
             plt.plot(x, bound_diff, '-', label=f"Max Noise ({count_to_name[test]})")
+        
+        if "dep_32_bfv" == log:
+            for test in [1, 100, 1000]:
+                line = bin_log_arrays[test][log]
+                bound_diff = [line[i] - base[i] for i in range(L)]
+                plt.plot(x, bound_diff, '--', label=f"Max Noise Bin ({count_to_name[test]})")
 
         plt.legend()
         plt.xlabel('\\#Mult')
         plt.ylabel('$\\log_2(v) - \\log_2(\\sigma)$')
-        plt.savefig(f"figure/{log}.eps", format='eps', bbox_inches='tight', pad_inches=0.02)
+        plt.savefig(f"figure/{log}.pdf", format='pdf', bbox_inches='tight', pad_inches=0.02)
 
         if "bfv" in log:
             plt.clf()
