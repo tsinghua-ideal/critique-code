@@ -41,19 +41,23 @@ def get_bound(N, depth, std0=gaussian_std0):
     bound_canonical = [log2(sqrt(N) * std0 * 6)]
     # BKey = 1
     bound_kpz21 = [log2(6 * std0) if std0 == gaussian_std0 else log2(1)]
+    # only applicable for std0 == key_std0
+    bound_kpz21_deltaMS = [0 if std0 == gaussian_std0 else log2(1)]
     for i, var in enumerate(var_dep):
         if i == 0:
             continue
         bound_canonical.append(bound_canonical[i - 1] + bound_canonical[0])
         bound_kpz21.append(log2(2 * sqrt(N)) + bound_kpz21[i - 1] + bound_kpz21[0])
-    
+        bound_kpz21_deltaMS.append(log2(4 * sqrt(N)) + bound_kpz21_deltaMS[i - 1] + bound_kpz21_deltaMS[0])
+
     bounds = {
         "stderr_indep": stderr_indep,
         "stderr_dep": stderr_dep,
         "normal_bound_indep": normal_bound_indep,
         "normal_bound_dep": normal_bound_dep,
         "bound_canonical": bound_canonical,
-        "bound_kpz21": bound_kpz21
+        "bound_kpz21": bound_kpz21,
+        "bound_kpz21_deltaMS": bound_kpz21_deltaMS
     }
 
     return bounds
@@ -151,6 +155,12 @@ def plot_bound():
                 bound_diff_real = [line_real[i] - base[i] for i in range(L)]
                 plt.plot(x, bound_diff_real, '-', label=f"Max Noise ({count_to_name[count]})")
 
+            if poly == "key" and noise == "dep":
+                bound_kpz21_deltaMS = bound["bound_kpz21_deltaMS"]
+                bound_diff_kpz21_deltaMS = [bound_kpz21_deltaMS[i] - base[i] for i in range(L)]
+                plt.plot(x, bound_diff_kpz21_deltaMS, '-.', label="HPS19 Bound w/ $4\\sqrt{N}$")
+
+            # plt.ylim(-20, 40)
             plt.legend()
             plt.xlabel('\\#Mult')
             plt.ylabel('$\\log_2(v) - \\log_2(\\sigma)$')

@@ -68,6 +68,26 @@ def kpz21_bfv():
 
     return logBound
 
+def kpz21_bfv_deltaMS():
+    # deltaMS is introduced in https://github.com/openfheorg/openfhe-development/pull/1007
+    deltaN = 2 * sqrt(N)
+    # for uni * uni and s * s when first encountered
+    deltaMS = 4 * sqrt(N)
+    Berr = 6 * gaussian_std0
+    Bkey = 1
+    Vnorm = (1. + 2. * deltaN * Bkey) * Berr
+
+    bound = [Vnorm]
+
+    for k in range(2, L + 1):
+        # Formula 10 of KPZ21 with deltaMS
+        b = (4 + deltaMS) * (bound[k-1-1] + Vnorm) * deltaN * t/ 2 + (1 + deltaN * Bkey + deltaMS * Bkey * deltaN * Bkey)/2
+        bound.append(b)
+
+    logBound = [log2(b) for b in bound]
+
+    return logBound
+
 def openfhe_bfv():
     deltaN = 2 * sqrt(N)
     C1 = deltaN * deltaN * t
@@ -85,8 +105,29 @@ def openfhe_bfv():
 
     return bound
 
+def openfhe_bfv_deltaMS():
+    deltaN = 2 * sqrt(N)
+    deltaMS = 4 * sqrt(N)
+    C1 = deltaN * deltaMS * t
+    Berr = 6 * gaussian_std0
+    Bkey = 1
+    Vnorm = (1. + 2. * deltaN * Bkey) * Berr
+
+    bound = [log2(Vnorm)]
+
+    for k in range(2, L + 1):
+        # After Formula 10 of KPZ21 with deltaMS
+        # https://github.com/openfheorg/openfhe-development/blob/02a8e9c76c3e2eff53392530199c63e4da53eb65/src/pke/lib/scheme/bfvrns/bfvrns-parametergeneration.cpp#L260-L264
+        # https://github.com/openfheorg/openfhe-development/pull/1007
+        b = (k -1 - 1) * log2(C1) + log2(C1 * Vnorm)
+        bound.append(b)
+
+    return bound
+
 kpz21_bound = kpz21_bfv()
+kpz21_bound_deltaMS = kpz21_bfv_deltaMS()
 openfhe_bound = openfhe_bfv()
+openfhe_bound_deltaMS = openfhe_bfv_deltaMS()
 
 def read_log(filename):
     array = []
@@ -184,7 +225,9 @@ def plot_bound():
             plt.plot(x, diff_normal, ':', label="Gaussian Bound")
 
             bound_diff_kpz21 = [kpz21_bound[i] - base[i] for i in range(L)]
+            bound_diff_kpz21_deltaMS = [kpz21_bound_deltaMS[i] - base[i] for i in range(L)]
             bound_diff_openfhe = [openfhe_bound[i] - base[i] for i in range(L)]
+            bound_diff_openfhe_deltaMS = [openfhe_bound_deltaMS[i] - base[i] for i in range(L)]
             plt.plot(x, bound_diff_kpz21, '--', label="KPZ21 Bound")
             plt.plot(x, bound_diff_openfhe, '--', label="OpenFHE Bound")
 
@@ -193,6 +236,10 @@ def plot_bound():
             bound_diff = [line[i] - base[i] for i in range(L)]
             plt.plot(x, bound_diff, '-', label=f"Max Noise ({count_to_name[test]})")
 
+            plt.plot(x, bound_diff_kpz21_deltaMS, '-.', label="KPZ21 Bound w/ $4\\sqrt{N}$")
+            plt.plot(x, bound_diff_openfhe_deltaMS, '-.', label="OpenFHE Bound w/ $4\\sqrt{N}$")
+
+            # plt.ylim(-20, 85)
 
             plt.legend()
             plt.xlabel('\\#Mult')
