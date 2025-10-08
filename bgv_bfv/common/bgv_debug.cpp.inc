@@ -1,8 +1,8 @@
 // DecryptCore not accessible from CryptoContext
 // so copy from @openfhe//src/pke/lib/schemerns/rns-pke.cpp
-DCRTPoly DecryptCore(const std::vector<DCRTPoly>& cv,
+DCRTPoly DecryptCore(const std::vector<DCRTPoly> &cv,
                      const PrivateKey<DCRTPoly> privateKey) {
-  const DCRTPoly& s = privateKey->GetPrivateElement();
+  const DCRTPoly &s = privateKey->GetPrivateElement();
 
   size_t sizeQ = s.GetParams()->GetParams().size();
   size_t sizeQl = cv[0].GetParams()->GetParams().size();
@@ -31,10 +31,10 @@ DCRTPoly DecryptCore(const std::vector<DCRTPoly>& cv,
 #define OP
 #define NOISE
 
-std::array<double, 32> maxNoise;
+std::array<TopK, 32> topks;
 
 void __heir_debug(CryptoContextT cc, PrivateKeyT sk, CiphertextT ct,
-                  const std::map<std::string, std::string>& debugAttrMap) {
+                  const std::map<std::string, std::string> &debugAttrMap) {
   static int count = 0;
   // count from 0 to 31
   // for indep case, the last argument is 0
@@ -57,11 +57,7 @@ void __heir_debug(CryptoContextT cc, PrivateKeyT sk, CiphertextT ct,
   auto b = DecryptCore(cv, sk);
   b.SetFormat(Format::COEFFICIENT);
 
-  // modified Norm to return log2 value using GetMSB
-  // ConvertToDouble will overflow 2^1024...
-  double noise = (b.Norm());
-
-  maxNoise[count] = std::max(maxNoise[count], noise);
+  update_topk(topks[count], b.CRTInterpolate());
   count++;
 #endif
 }
