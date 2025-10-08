@@ -2,7 +2,7 @@
 
 ## Run the tests
 
-This fold has all the tests generated for you, and once you set `$OPENFHE_PATH` and run `copy.sh`, you should be able to build and run the test. You should also apply `norm.patch` to OpenFHE as `double` wont represent noise bigger than `2^1024`.
+This fold has all the tests generated for you, and once you set `$OPENFHE_PATH` and run `copy.sh`, you should be able to build and run the test.
 
 ## Generating the tests
 
