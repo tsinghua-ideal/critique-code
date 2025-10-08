@@ -1,10 +1,11 @@
 int main(int argc, char *argv[]) {
   // get test number from command line
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <test_number>" << std::endl;
-    return 1;
+  if (argc != 3) {
+    std::cerr << "Usage: " << argv[0] << " <test_number>" << " <thread_number>"
+              << std::endl;
   }
   int testNumber = std::stoi(argv[1]);
+  int threadNumber = std::stoi(argv[2]);
 
   auto cryptoContext = mult_dep__generate_crypto_context();
   std::cout << *(cryptoContext->GetCryptoParameters()) << std::endl;
@@ -30,26 +31,34 @@ int main(int argc, char *argv[]) {
   };
 
   // run the tests
-  for (int i = 0; i < testNumber; i++) {
-    oneTest();
+  std::vector<std::thread> threads;
+  for (int t = 0; t < threadNumber; t++) {
+    threads.emplace_back([&]() {
+      for (int i = 0; i < testNumber / threadNumber; i++) {
+        oneTest();
+      }
+    });
+  }
+  for (auto &th : threads) {
+    th.join();
   }
 
   // output the noise quantiles
   for (unsigned i = 0; i != topks.size(); ++i) {
     auto &topk = topks[i];
-    auto n12 = *topk.quantile(1.0 - std::exp2(-12));
-    auto n16 = *topk.quantile(1.0 - std::exp2(-16));
-    auto n20 = *topk.quantile(1.0 - std::exp2(-20));
-    auto n24 = *topk.quantile(1.0 - std::exp2(-24));
-    auto max = *topk.quantile(1.0);
-    auto log2n12 = approxLog2(n12);
-    auto log2n16 = approxLog2(n16);
-    auto log2n20 = approxLog2(n20);
-    auto log2n24 = approxLog2(n24);
-    auto log2max = approxLog2(max);
-    std::cout << "TopK noise for arg" << i << ": n12=" << log2n12
-              << ", n16=" << log2n16 << ", n20=" << log2n20
-              << ", n24=" << log2n24 << ", max=" << log2max << std::endl;
+    auto n10 = approxLog2(*topk.quantile(1.0 - std::exp2(-10)));
+    auto n12 = approxLog2(*topk.quantile(1.0 - std::exp2(-12)));
+    auto n14 = approxLog2(*topk.quantile(1.0 - std::exp2(-14)));
+    auto n16 = approxLog2(*topk.quantile(1.0 - std::exp2(-16)));
+    auto n18 = approxLog2(*topk.quantile(1.0 - std::exp2(-18)));
+    auto n20 = approxLog2(*topk.quantile(1.0 - std::exp2(-20)));
+    auto n22 = approxLog2(*topk.quantile(1.0 - std::exp2(-22)));
+    auto n24 = approxLog2(*topk.quantile(1.0 - std::exp2(-24)));
+    auto max = approxLog2(*topk.quantile(1.0));
+    std::cout << "TopK noise for arg" << i << ": n10=" << n10 << ", n12=" << n12
+              << ", n14=" << n14 << ", n16=" << n16 << ", n18=" << n18
+              << ", n20=" << n20 << ", n22=" << n22 << ", n24=" << n24
+              << ", max=" << max << std::endl;
   }
 
   return 0;

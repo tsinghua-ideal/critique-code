@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <optional>
 #include <ostream>
 #include <queue>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "openfhe.h"
@@ -22,6 +24,7 @@ public:
 
   // Add one integer observation
   void update(const IntT x) {
+    std::lock_guard<std::mutex> lk(mu_);
     ++N_;
     auto &c = counts_[x];
     c += 1;
@@ -48,6 +51,7 @@ public:
   // Exact q-quantile if covered by current top-K *values* (with counts).
   // Returns nullopt if tail mass required exceeds mass within top-K values.
   std::optional<IntT> quantile(double q) {
+    std::lock_guard<std::mutex> lk(mu_);
     if (N_ == 0 || K_ == 0)
       return std::nullopt;
     if (q <= 0.0)
@@ -86,10 +90,14 @@ public:
   }
 
   // Total number of observations
-  CountT count() const { return N_; }
+  CountT count() const {
+    std::lock_guard<std::mutex> lk(mu_);
+    return N_;
+  }
 
   // Return top-K values with counts, sorted descending by value
   std::vector<std::pair<IntT, CountT>> topk_desc() {
+    std::lock_guard<std::mutex> lk(mu_);
     ensure_sorted_heap_values();
     std::vector<std::pair<IntT, CountT>> out;
     out.reserve(asc_values_.size());
@@ -107,6 +115,7 @@ private:
     } // min-heap by value
   };
 
+  // These helpers require caller to hold mu_
   void push_heap_value(const IntT v) {
     heap_.push(v);
     in_heap_.insert(v);
@@ -150,6 +159,9 @@ private:
   // Config / state
   const std::size_t K_;
   CountT N_;
+
+  // Mutex
+  mutable std::mutex mu_;
 
   // Counts for all observed values
   std::map<IntT, CountT> counts_;

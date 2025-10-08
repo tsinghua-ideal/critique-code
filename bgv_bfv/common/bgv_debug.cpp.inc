@@ -32,10 +32,15 @@ DCRTPoly DecryptCore(const std::vector<DCRTPoly> &cv,
 #define NOISE
 
 std::array<TopK, 32> topks;
+std::map<std::thread::id, int> thread2counter;
 
 void __heir_debug(CryptoContextT cc, PrivateKeyT sk, CiphertextT ct,
                   const std::map<std::string, std::string> &debugAttrMap) {
-  static int count = 0;
+  auto thread_id = std::this_thread::get_id();
+  if (thread2counter.find(thread_id) == thread2counter.end()) {
+    thread2counter[thread_id] = 0;
+  }
+  auto &count = thread2counter[thread_id];
   // count from 0 to 31
   // for indep case, the last argument is 0
 #ifdef OP
