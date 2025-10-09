@@ -23,6 +23,10 @@ public:
   // Add one integer observation
   void update(const IntT x) {
     ++N_;
+    if (N_ != 0 && N_ % (1000 * (32768)) == 0) {
+      std::cout << "TopK: seen " << N_ / 32768 << " items, heap size "
+                << heap_.size() << std::endl;
+    }
     auto &c = counts_[x];
     c += 1;
 
@@ -98,6 +102,139 @@ public:
       out.emplace_back(v, get_count(v));
     }
     return out;
+  }
+
+  // Text snapshot: writes magic, version, K (from file), N, M, then M lines of
+  // "value count".
+  // Requires IntT to be streamable with operator<< and operator>>.
+  bool save_snapshot(const std::string &path) const {
+    std::ofstream ofs(path, std::ios::out | std::ios::trunc);
+    if (!ofs)
+      return false;
+
+    // ---- take snapshot under lock ----
+    std::vector<IntT> asc_values;
+    CountT N_snap;
+    {
+      N_snap = N_;
+
+      auto tmp = heap_;
+      asc_values.clear();
+      asc_values.reserve(tmp.size());
+      while (!tmp.empty()) {
+        asc_values.push_back(tmp.top());
+        tmp.pop();
+      }
+      std::sort(asc_values.begin(), asc_values.end()); // ascending
+    }
+    // ---- write outside lock ----
+    constexpr const char *kMagic = "TKTC1";
+    ofs << kMagic << "\n";
+    ofs << K_ << "\n";                // K as stored in the file (for info)
+    ofs << N_snap << "\n";            // total items seen
+    ofs << asc_values.size() << "\n"; // M = #distinct values in heap
+
+    // We also need counts for those values; read them under lock one-by-one
+    for (const auto &v : asc_values) {
+      CountT c;
+      {
+        auto it = counts_.find(v);
+        c = (it == counts_.end()) ? CountT(0) : it->second;
+      }
+      ofs << v << " " << c << "\n";
+      if (!ofs)
+        return false;
+    }
+    return true;
+  }
+
+  // Read a snapshot file (same format as save_snapshot) and MERGE it into this
+  // instance.
+  // Keeps your current K_. After merging, heap_ contains the global top-K
+  // DISTINCT values across old + new, and counts_ holds their aggregated
+  // multiplicities. Returns false on parse/format errors.
+  bool merge_snapshot(const std::string &path) {
+    std::ifstream ifs(path);
+    if (!ifs)
+      return false;
+
+    std::string magic;
+    if (!std::getline(ifs, magic))
+      return false;
+    if (magic != "TKTC1")
+      return false;
+
+    std::size_t K_file = 0;
+    CountT N_file = 0;
+    std::size_t M = 0;
+
+    if (!(ifs >> K_file))
+      return false;
+    if (!(ifs >> N_file))
+      return false;
+    if (!(ifs >> M))
+      return false;
+    ifs.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    // Read all entries first so we can fail safely without mutating state.
+    std::vector<std::pair<IntT, CountT>> entries;
+    entries.reserve(M);
+    for (std::size_t i = 0; i < M; ++i) {
+      std::string vstr;
+      CountT c;
+      if (!(ifs >> vstr >> c))
+        return false;
+      IntT v(vstr);
+      ifs.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      entries.emplace_back(std::move(v), c);
+    }
+
+    // Increase total population
+    N_ += N_file;
+
+    if (K_ == 0) {
+      // We don't track any values in this configuration; done.
+      return true;
+    }
+
+    // For each (value,count) from snapshot:
+    for (auto &[v, c] : entries) {
+      // If we're already tracking this value, just add its count.
+      if (in_heap_.count(v)) {
+        auto it = counts_.find(v);
+        if (it != counts_.end()) {
+          it->second += c;
+        } else {
+          // Shouldn't happen if in_heap_ is consistent, but be defensive.
+          counts_[v] = c;
+        }
+        continue;
+      }
+
+      // Decide whether this value belongs in the global top-K by value.
+      if (heap_.size() < K_) {
+        // Space available: admit directly.
+        heap_.push(v);
+        in_heap_.insert(v);
+        counts_[v] = c;
+      } else if (v > heap_.top()) {
+        // Evict current smallest tracked value; replace with v.
+        IntT ev = heap_.top();
+        heap_.pop();
+        in_heap_.erase(ev);
+        counts_.erase(ev);
+
+        heap_.push(v);
+        in_heap_.insert(v);
+        counts_[v] =
+            c; // start with c; if v appears again later, we'll add to it
+      } else {
+        // v is not among the K largest distinct values globally; ignore its
+        // count (we still increased N_ above, which is correct for quantile
+        // ranks).
+      }
+    }
+    return true;
   }
 
 private:
